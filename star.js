@@ -42,3 +42,8 @@ for (var i = 1; i < lines.length; i++) {
     lines[0].join(lines[i]);
 }
 line.strokeColor = 'blue';
+
+// draw circle at points of the star
+var center_y = length  / (2 * Math.cos(angle_rad / 2));
+const circle = new Path.Circle(line.pivot, center_y);
+circle.strokeColor = 'blue';
