@@ -3,7 +3,7 @@
 
 function drawRainbow(height, width, thickness = 1, spacing = 1) {
     var center = new Point(0, 0);
-    var new_height = height - width/2 - thickness;
+    var new_height = height - width/2 - thickness/2;
     var arc_radius = new_height/2,
         leg_height = new_height/2;
     
@@ -81,9 +81,10 @@ function drawRainbow(height, width, thickness = 1, spacing = 1) {
 // values are given in inches
 // need to scale by 96 upon display to save as inches
 var size = 10,
-    width = 3,
-    thickness = .75,
-    spacing = 1;
+    width = 2.5,
+    thickness = .6,
+    spacing = 1/2,
+    hole_radius_in = .05;
 
 var center_point = new Point(size, size)/2;
 
@@ -96,16 +97,12 @@ rainbowGroup.translate(center_point*96);
 var rainbow_center = rainbowGroup.children[0],
     rainbow_outline = rainbowGroup.children[1],
     lines = rainbowGroup.children[2];
-// lines.strokeColor = 'red';
-// lines.strokeWidth = 1;
+lines.strokeColor = 'red';
+lines.remove();
 rainbow_center.strokeColor = 'black';
 rainbow_outline.strokeColor = 'green';
-// rainbow_outline.strokeWidth = 1*96; //1 inch
-// var rect = new Path.Rectangle(new Point(0, 0), new Size(12, 12));
-// rect.strokeColor = 'blue'
-// rect.scale(96);
 
-function circlesAtIntersections(path1, path2, hole_radius){
+function circlesAtIntersections(path1, path2, hole_radius_px){
     
     var intersectionGroup = new Group();
     var intersections = path1.getIntersections(path2);
@@ -113,12 +110,11 @@ function circlesAtIntersections(path1, path2, hole_radius){
     for (var i = 0; i < intersections.length; i++) {
         var intersectionPath = new Path.Circle({
             center: intersections[i].point,
-            radius: hole_radius,
+            radius: hole_radius_px,
             strokeColor: 'blue',
             parent: intersectionGroup
         });
     }
 }
 
-var circle_radius_in = .1
-circlesAtIntersections(rainbow_outline, lines, circle_radius_in*96);
+circlesAtIntersections(rainbow_outline, lines, hole_radius_in*96);
