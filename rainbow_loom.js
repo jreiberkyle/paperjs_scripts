@@ -1,7 +1,14 @@
-
-
-
+/**
+ * create a rainbow loom shape and circle intersection lines
+ * @param  {float} height External height of loom shape
+ * @param  {float} width Distance between center lines in loom outline
+ * @param {float} thickness Thickness of loom outline
+ * @param {float} spacing Spacing between intersection lines along loom
+ *                        centerline
+ * @return {Path.Group} [loom centerline, loom outline, intersecting lines]
+ */
 function drawRainbow(height, width, thickness = 1, spacing = 1) {
+    
     var center = new Point(0, 0);
     var new_height = height - width/2 - thickness/2;
     var arc_radius = new_height/2,
@@ -78,30 +85,13 @@ function drawRainbow(height, width, thickness = 1, spacing = 1) {
     return new Group([rainbow, rainbow_in, lines_path]);
 };
 
-// values are given in inches
-// need to scale by 96 upon display to save as inches
-var size = 10,
-    width = 2.5,
-    thickness = .6,
-    spacing = 1/2,
-    hole_radius_in = .05;
-
-var center_point = new Point(size, size)/2;
-
-// var rainbowGroup = drawRainbow(size, 1, 1);
-var rainbowGroup = drawRainbow(size, width, thickness, spacing);
-console.log('heree')
-rainbowGroup.scale(96);
-rainbowGroup.translate(center_point*96);
-
-var rainbow_center = rainbowGroup.children[0],
-    rainbow_outline = rainbowGroup.children[1],
-    lines = rainbowGroup.children[2];
-lines.strokeColor = 'red';
-lines.remove();
-rainbow_center.strokeColor = 'black';
-rainbow_outline.strokeColor = 'green';
-
+/**
+ * draw circles at intersections between two paths
+ * @param  {Path} path1 First path for intersection
+ * @param  {Path} path2 Second path for intersection
+ * @param {float} hole_radius_px Circle hole radius in pixels
+ * @return {NaN}
+ */
 function circlesAtIntersections(path1, path2, hole_radius_px){
     
     var intersectionGroup = new Group();
@@ -117,4 +107,25 @@ function circlesAtIntersections(path1, path2, hole_radius_px){
     }
 }
 
-circlesAtIntersections(rainbow_outline, lines, hole_radius_in*96);
+// values are given in inches
+// need to scale by 96 upon display to save as inches
+var size_in = 10,
+    width_in = 2.5,
+    thickness_in = .6,
+    spacing_in = 1/2,
+    hole_radius_in = .05;
+var dpi = 96;
+
+var center_point = new Point(size_in, size_in)/2;
+var rainbowGroup = drawRainbow(size_in, width_in, thickness_in, spacing_in);
+rainbowGroup.scale(dpi); // scale inches to pixels for display
+rainbowGroup.translate(center_point*dpi);
+
+var rainbow_center = rainbowGroup.children[0],
+    rainbow_outline = rainbowGroup.children[1],
+    lines = rainbowGroup.children[2];
+lines.strokeColor = 'red';
+lines.remove();
+rainbow_center.strokeColor = 'black';
+rainbow_outline.strokeColor = 'green';
+circlesAtIntersections(rainbow_outline, lines, hole_radius_in*dpi);
