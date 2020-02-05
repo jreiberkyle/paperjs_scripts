@@ -34,11 +34,6 @@ function drawHexagon(point_radius, thickness_px) {
 };
 
 function circlesAtIntersections(hexagon, spacing_in, hole_radius){
-    // // draw vertical, evenly spaced lines
-    // var spacing = hexagon.bounds.width/(hole_count-1);
-    // if (spacing < 2.5 * hole_radius) {
-    //     console.error('spacing too small')
-    // }
     var spacing = spacing_in;
     var hole_count = hexagon.bounds.width/spacing + 1;
     
@@ -76,18 +71,56 @@ function circlesAtIntersections(hexagon, spacing_in, hole_radius){
     return new Group([circles_path, lines_path]);
 }
 
+
+function drawComb(height, count, spacing_in, hole_radius, recess_height=.25){
+    var spacing = spacing_in;
+    
+    var teeth = [], recesses = [];
+    var recess_width = spacing - 2*hole_radius;
+    for (var i=0; i < count; i++) {
+        var x = i*spacing;
+        var tooth = new Path.Circle(new Point(x, 0), hole_radius)
+        teeth.push(tooth);
+        
+        if (i < (count-1)) {
+            // draw recess
+            var size = new Size(recess_width, -recess_height);
+            console.log(size)
+            var recess = new Path.Rectangle(tooth.bounds.rightCenter,size)
+            recesses.push(recess);            
+        }
+    }
+    var teeth_path = new CompoundPath({
+        children: teeth,
+        // strokeColor: 'red'
+    });
+    var recesses_path = new CompoundPath({
+        children: recesses,
+        // strokeColor: 'red'
+    });
+    
+    var bottom_left = teeth_path.bounds.leftCenter;
+    var top_right = teeth_path.bounds.rightCenter - new Point(0, height)
+    var comb_orig = new Path.Rectangle(bottom_left, top_right);
+    var comb = comb_orig.unite(teeth_path).subtract(recesses_path);
+    comb_orig.remove();
+    teeth_path.remove();
+    recesses_path.remove();
+    comb.strokeColor = 'blue'
+    return comb;
+}
+
 // values are given in inches
 // need to scale by 96 upon display to save as inches
-var point_radius_in = 3,
+var point_radius_in = 2.5,
     thickness_in = .5,
     spacing_in = .2,
-    // hole_count  = 21,
     hole_radius_in = .05;
 var dpi = 96;
 
 var center_point = new Point(point_radius_in, point_radius_in);
-var hexagon = drawHexagon(point_radius_in, thickness_in*dpi);
 
+var hexagon = drawHexagon(point_radius_in, thickness_in*dpi);
 circlesGroup = circlesAtIntersections(hexagon, spacing_in, hole_radius_in);
 circles = circlesGroup.children[0];
 lines = circlesGroup.children[1];
@@ -95,3 +128,7 @@ lines.remove();
 var hexagon_loom_group = new Group([hexagon, circles]);
 hexagon_loom_group.scale(dpi); // scale inches to pixels for display
 hexagon_loom_group.translate(center_point*dpi);
+
+var comb_group = drawComb(1, 10, spacing_in, hole_radius_in)
+comb_group.scale(dpi); // scale inches to pixels for display
+comb_group.translate(center_point*dpi);
