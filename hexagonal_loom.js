@@ -1,5 +1,6 @@
 
-function drawHexagon(point_radius, thickness_px) {
+function drawHexagon(width_in, thickness_px) {
+    var point_radius = width_in/2;
     // Create a Paper.js Path to draw a line into it:
     var hexagon = new Path({closed:true,
                             strokeColor: 'black',
@@ -35,10 +36,11 @@ function drawHexagon(point_radius, thickness_px) {
 
 function circlesAtIntersections(hexagon, spacing_in, hole_radius){
     var spacing = spacing_in;
-    var hole_count = hexagon.bounds.width/spacing + 1;
+    var hole_count = Math.round(hexagon.bounds.width/spacing + 1);
+    console.log(hole_count + ' hole pairs will be created.')
     
     var lines = [];
-    for (var i=1; i < hole_count - 1; i++) {
+    for (var i=0; i < hole_count; i++) {
         
         var line = new Path.Line(hexagon.bounds.topLeft,
                                  hexagon.bounds.bottomLeft);
@@ -112,15 +114,15 @@ function drawComb(height, count, spacing_in, hole_radius, recess_height=.25){
 
 // values are given in inches
 // need to scale by 96 upon display to save as inches
-var point_radius_in = 2.5,
+var width_in = 4.8,
     thickness_in = .5,
     spacing_in = .2,
     hole_radius_in = .05;
 var dpi = 96;
 
-var center_point = new Point(point_radius_in, point_radius_in);
+var center_point = new Point(width_in, width_in)/2;
 
-var hexagon = drawHexagon(point_radius_in, thickness_in*dpi);
+var hexagon = drawHexagon(width_in, thickness_in*dpi);
 circlesGroup = circlesAtIntersections(hexagon, spacing_in, hole_radius_in);
 circles = circlesGroup.children[0];
 lines = circlesGroup.children[1];
