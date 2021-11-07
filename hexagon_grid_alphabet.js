@@ -1,3 +1,4 @@
+// this script is intended for use in paperjs sketch
 function drawHexagon(width_in) {
     var point_radius = width_in/2;
     // Create a Paper.js Path to draw a line into it:
