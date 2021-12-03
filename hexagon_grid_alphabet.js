@@ -28,10 +28,7 @@ function drawHexagon(width_in) {
       ));
     }
     
-    // hexagon.segments[0].selected = false;
-    hexagon.translate(center_point);
     hexagon.rotate(-90); // start at upper left corner of hexagon
-    // hexagon.selected = true;
     return hexagon
 };
 
@@ -60,33 +57,11 @@ function roundPath(path,radius) {
     return path;
 };
 
-    
-// values are given in inches
-// need to scale by 96 upon display to save as inches
-var width_in = 2,
-    thickness_in = .05,
-    spacing_in = .2,
-    hole_radius_in = .05;
-var dpi = 96;
-
-var center_point = new Point(width_in, width_in)/2;
-
-
-// var hexagon = roundPath(drawHexagon(width_in, thickness_in*dpi), .05);
-// var hexagon = drawHexagon(width_in);
-// // hexagon.rotate(30);
-// hexagon.scale(dpi); // scale inches to pixels for display
-// hexagon.selected = true;
-// hexagon.visible = false;
-
 function hexagonTileCenter(col, row, original, space=0) {
     var width = original.bounds.width + space,
         height = 3 / 4 * original.bounds.height + space;
     var x_off = (1-row % 2) * width/2; //original.bounds.width/2;
-    return new Point(
-        width * col + x_off,
-        // original.bounds.width * col + x_off,
-        height * row);    
+    return new Point(width * col + x_off, height * row);    
 };
 
 function drawHexagonTile(col, row, original, space=0) {
@@ -113,26 +88,24 @@ function drawDot(location, color, radius) {
 //     }
 // });
 
-function drawText(val, point, {color='blue', size=50}) {
+function drawText(val, point, {size=50, fillColor='blue'}) {
     var text = new paper.PointText({
-        position: point + new Point(0, size/3),
+        position: point + new Point(0, 0.35*size),
         content: val,
         fontFamily: 'Helvetica',
         fontWeight: 'bold',
         fontSize: size,
-        fillColor: color,
+        fillColor: fillColor,
         justification: 'center'
     });
     return text;
 };
-
 // drawText(, new Point(100, 100))
-var HexagonTiles = Base.extend({
-	initialize: function({cols=0, rows=0, limit=0, space=0}) {
-	    console.log('init');
-	    console.log(space);
-	    this.hexagon = drawHexagon(width_in).scale(dpi);
 
+var HexagonTiles = Base.extend({
+	initialize: function(width, {cols=0, rows=0, limit=0, space=0}) {
+	   // this.hexagon = drawHexagon(width_in).scale(dpi);
+	    this.hexagon = drawHexagon(width);
 	    if ((cols == 0 && rows == 0) ||
 	        (cols == 0 && limit == 0) ||
 	        (rows == 0 && limit == 0)) {
@@ -162,7 +135,11 @@ var HexagonTiles = Base.extend({
         this.rows = rows;
         this.cols = cols;
         this.count = this.tiles.length;
+        this.group = new Group(this.tiles);
 	},
+    get bounds() {
+        return this.group.bounds;
+    },
 	loc: function(i) {
 	    row = Math.trunc(i / this.cols);
 	    col = i - row*this.cols;
@@ -174,11 +151,11 @@ var HexagonTiles = Base.extend({
 	setTile: function(col, row, path) {
 	    this.tiles[this.cols*row + col] = path;
 	},
-	toCompound: function() {
-	    for (var i = 0; i < this.tiles.length; i++) {
-	        this.tiles[i] = new CompoundPath({children: [this.tiles[i]]});
-	    }
-	},
+// 	toCompound: function() {
+// 	    for (var i = 0; i < this.tiles.length; i++) {
+// 	        this.tiles[i] = new CompoundPath({children: [this.tiles[i]]});
+// 	    }
+// 	},
 	apply: function(callback) {
 	    for (var i = 0; i < this.tiles.length; i++) {
 	        callback(this.tiles[i]);
@@ -206,12 +183,11 @@ var HexagonTiles = Base.extend({
 	            colPlus = j % 2;
 	            colMinus = (j+1) % 2;
 	        }
-	        maxCol = Math.min(this.cols-1, col+colPlus);
-	        minCol = Math.max(0, col-colMinus);
+	        maxCol = Math.min(this.cols - 1, col + colPlus);
+	        minCol = Math.max(0, col - colMinus);
 	        var count;
 	        for (var i = minCol; i <= maxCol; i++) {
 	            count = j*this.cols + i;
-	           // console.log('count: ' + count);
 	            if (count >= this.count) {
                     continue;
                 }
@@ -239,101 +215,54 @@ var HexagonTiles = Base.extend({
 	        var loc = this.loc(i);
 	        removeNeighborOverlaps(loc[0], loc[1], draw=false);
 	    }
-	}
+	},
+	addLoc: function() {
+	    var locs = [];
+	    for (var i = 0; i < this.tiles.length; i++) {
+	        locs.push(this.loc(i));    
+	    }
+        this.addText(locs, {size:50, fillColor:'green'});
+	},
+	addText: function(src, {size=120, strokeColor=false, fillColor='blue'}) {
+        var text = []
+        var max = Math.min(this.count, src.length);
+        for (var i = 0; i < max; i++) {
+            var letter = drawText(src[i], this.tiles[i].position,
+                                  {size: size, fillColor:fillColor});
+
+            if (strokeColor) {
+                letter.clone().style = {
+                    fillColor: null,
+                    strokeColor: strokeColor,
+                };               
+            }
+        }
+    },
+    setView: function() {
+        view.center = this.group.position;
+    }
 });
 
-alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
-            'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
-var ht = new HexagonTiles({cols: 7, limit: alphabet.length, space: 7});
-// alphabet = ['A', 'B', 'C', 'D', 'E'];
-// var ht = new HexagonTiles({cols: 2, limit: alphabet.length, space: 7});
 
-ht.translate(100, 100);
-ht.apply(p => roundPath(p, 9));
-// ht.apply(p => drawDot(p.bounds.center, 'red', 5));
-
-text = []
-for (var i=0; i<ht.count; i++) {
-    drawText(alphabet[i], ht.tiles[i].position, {size: 120});
-    // text.push(drawText(ht.loc(i), ht.tiles[i].position,
-    //                   {color: 'green', size: 50}));
-}
-
-function viewNeighbors(col, row) {
-    var tile = ht.tile(col, row)
-    tile.selected = true;
-    paper.view.center = tile.position;
+// function viewNeighbors(col, row) {
+//     var tile = ht.tile(col, row)
+//     tile.selected = true;
+//     paper.view.center = tile.position;
     
-    neighbor_tiles = ht.neighborTiles(col, row, true);
-    for (var i = 0; i < neighbor_tiles.length; i++) {
-        neighbor_tiles[i].strokeColor = 'red'; // selected = true;
-    }
-}
-// viewNeighbors(4, 1);
+//     neighbor_tiles = ht.neighborTiles(col, row, true);
+//     for (var i = 0; i < neighbor_tiles.length; i++) {
+//         neighbor_tiles[i].strokeColor = 'red'; // selected = true;
+//     }
+// }
+// // viewNeighbors(4, 1);
 
-allColors = ['green', 'blue', 'purple', 'black', 'yellow', 'orange', 'red'];
-function removeOverlapping(path, otherPath) {
-    // pretty specific to hexagons but works for now
-    var intersections = path.getIntersections(otherPath);
-    if (path.closed) {
-        // sort lowest index to highest
-        intersections.sort(function(a, b){return a.index - b.index}); 
-    } else {
-        // sort highest index to lowest
-        intersections.sort(function(a, b){return b.index - a.index});
-    }
-    // 
-    console.log('intersections: ' + intersections);
-    var colors = ['blue', 'red', 'green'];
-    // path.curves[intersections[1].index].remove();
-    
-    
-    var paths = [];
-    for (var i = 0; i < intersections.length; i++) {
-        // var int = intersections[i];
-        var subpath = path.splitAt(intersections[i]);
-        console.log('path: ' + path.length);
-        console.log('subpath: ' + subpath.length);
-        subpath.strokeColor = colors[i];
-        paths.push(subpath);
-    }
-    // for now we remove the shortest path. hacky. probably better to check a
-    // point in the middle of the curve
-    // paths.sort(function(a, b){return a.length - b.length});
-    console.log(paths.length);
-
-    for (var i = 0; i < paths.length; i++) {
-        paths[i].strokeColor = allColors.pop(); // colors[i];
-        var intersectionPath = new Path.Circle({
-            center: intersections[i].point,
-            radius: 4,
-            fillColor: 'red'
-        });
-    }
-    if (paths.length) {
-        console.log('path0: ' + paths[0].length);
-        console.log('path1: ' + paths[1].length);
-        // paths[0].remove();
-    }
-    remainder = paths[1];
-    return remainder;
-
-}
-// removeOverlapping(ht.tile(1, 1), ht.tile(2,1));
-// ht.tile(2,1).visible = false;
 
 function removeNeighborOverlaps(col, row, draw=false) {
     var tile = ht.tile(col, row);
-    tile.selected = true;
-    paper.view.center = tile.position;
+    // tile.selected = true;
+    // paper.view.center = tile.position;
 
     neighbors = ht.neighborLocs(col, row, true);
-    // if (!neighbors.length) {
-    //     var newPath = new CompoundPath({
-    //     children: [tile], strokeColor: 'red', strokeWidth: 5, visible:true});
-    //     ht.setTile(col, row, newPath);
-    //     return;
-    // }
 
     children = [];
     for (var i = 0; i < neighbors.length; i++) {
@@ -341,7 +270,7 @@ function removeNeighborOverlaps(col, row, draw=false) {
     }
     // console.log(children.length);
     n_path = new CompoundPath({children: children});
-    n_path.selected = true;
+    // n_path.selected = true;
     
     if (!tile.intersects(n_path)) {
         console.log('does not intersect neighbors');
@@ -355,7 +284,7 @@ function removeNeighborOverlaps(col, row, draw=false) {
     // as the original path and returns the part after the split
     // as a new path
     tile.splitAt(tile.firstSegment.point); 
-    // drawDot(tile.firstSegment.point, 'blue', 7);
+
     var intersections = tile.getIntersections(n_path);
 
     pieces = [];
@@ -371,18 +300,12 @@ function removeNeighborOverlaps(col, row, draw=false) {
         }
         if (draw) {
             drawDot(intersection.point, colors[i] , 5);
-            // console.log('i: ' + i);
-            // console.log('intersection: ' + intersection);
-            // console.log('color: ' + colors[i]);
         }
         var subpath = tile.splitAt(intersection);
         subpath.strokeColor = colors[i];
-        // console.log('path: ' + tile.length);
-        // console.log('subpath: ' + subpath.length);
         pieces.push(subpath);
     }
     if (tile.firstSegment.point != intersections[0].point) {
-        // console.log('letstry');
         pieces[0].join(tile);    
     }
     
@@ -390,7 +313,6 @@ function removeNeighborOverlaps(col, row, draw=false) {
     children = [];
     for (var i = 0; i < pieces.length; i++) {
         if (1-i%2) {
-            // console.log('child color: ' + colors[i]);
             children.push(pieces[i]);
         } else {
             pieces[i].remove();
@@ -398,33 +320,37 @@ function removeNeighborOverlaps(col, row, draw=false) {
     }
     var newPath = new CompoundPath({
         children: children, strokeColor: 'red', strokeWidth: 5, visible:true});
-    // console.log('newPath: ' + newPath.length);
-    // drawDot(tile.firstSegment.point, 'red', 5);
     ht.setTile(col, row, newPath);
 }
-ht.removeOverlaps();
 
-// function drawTile(letter) {
-//     var hexagon = roundPath(drawHexagon(width_in, thickness_in*dpi), .05);
-//     hexagon.rotate(30);
-//     hexagon.scale(dpi); // scale inches to pixels for display
-//     hexagon.translate(center_point*dpi);
+// values are given in inches
+// need to scale by 96 upon display to save as inches
+var width_in = 2,
+    spacing_in = .07;
+var dpi = 96;
+console.log('begin');
+// project.activeLayer.bounds = new Rectangle(new Point(0, 0), new Size(20*dpi, 12*dpi));
+// view.center = new Point(110, 0);
+// view.zoom = 1;
+// view.viewSize = new Size(10, 12)*dpi
 
-//     var text = new paper.PointText(center_point*dpi);
-//     text.translate(new Point(0, 45));
-//     text.content=letter;
-//     text.justification = 'center';
-//     text.style = {
-//         fontFamily: 'Helvetica',
-//         fontWeight: 'bold',
-//         fontSize: '120px',
-//         fillColor: 'blue',
-//         justification: 'center'
-//     };
-//     return new Group([hexagon, text]);
-// };
+alphabet = ['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M', 
+            'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z'];
+// alphabet = ['B', 'C', 'D', 'E', 'F', 'G', 'J', 'K', 'L', 
+//             'N', 'P', 'Q', 'R', 'S', 'Z'];
+// var ht = new HexagonTiles({cols: 7, limit: alphabet.length, space: 7});
+var ht = new HexagonTiles(width_in*dpi,
+                          {cols: 7, limit: alphabet.length, space: spacing_in*dpi});
 
-//a = drawTile('A');
-//b = drawTile('B');
-//b.translate(new Point(.9*width_in*dpi, 0));
-//console.log('here');
+ht.translate(100, 100);
+ht.apply(p => roundPath(p, 9));
+// ht.apply(p => drawDot(p.bounds.center, 'red', 5));
+// ht.addLoc();
+ht.addText(alphabet, {strokeColor:'red', fillColor:'blue'});
+// ht.removeOverlaps();
+ht.setView();
+console.log('size (in): ' + ht.bounds.size/dpi);
+
+console.log(view.viewSize/dpi);
+// project.activeLayer.exportSVG({})
+// console.log(project.activeLayer.bounds.size/dpi);
